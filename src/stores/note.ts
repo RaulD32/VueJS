@@ -50,6 +50,15 @@ export const useNoteStore = defineStore('note', () => {
     }
   }
 
+  function deleteCategory(category: string) {
+    categories.value = categories.value.filter((cat) => cat !== category);
+    deleteByCategory(category); // Opcional: elimina las notas de esa categoría también
+  }
+
+  function deleteByCategory(category: string) {
+    notes.value = notes.value.filter((note) => note.cat !== category);
+  }
+
   watch(notes, (newNotes) => {
     localStorage.setItem('notes', JSON.stringify(newNotes));
   }, { deep: true });
@@ -66,6 +75,8 @@ export const useNoteStore = defineStore('note', () => {
     editNote,
     deleteNote,
     deleteAll,
+    deleteCategory,
+    deleteByCategory,
     filterNotes,
     sortNotes,
     addCategory

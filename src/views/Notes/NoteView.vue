@@ -1,6 +1,6 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 max-w-6xl mx-auto bg-gray-100 shadow-xl rounded-lg">
-    <!-- Sidebar con información y filtros -->
+    
     <aside class="bg-white p-6 rounded-lg shadow-md md:col-span-1 flex flex-col items-center">
       <h1 class="text-3xl font-extrabold text-blue-800 mb-4">📌Bloc de Notas</h1>
       
@@ -9,21 +9,27 @@
       </BaseButton>
       
       <div class="mt-6 w-full">
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">🫙 Filtrar por categoría</h2>
-        <div class="flex flex-col space-y-2">
-          <button v-for="category in noteStore.categories" :key="category" @click="filterByCategory(category)" 
-                  class="px-4 py-2 text-left rounded-lg hover:bg-blue-100 capitalize"
-                  :class="{'bg-blue-500 text-white': selectedCategory === category}">
-            {{ category }}
-          </button>
-          <button @click="filterByCategory(null)" class="px-4 py-2 text-left rounded-lg hover:bg-blue-100">
-            Todas
-          </button>
-        </div>
-      </div>
+  <h2 class="text-lg font-semibold text-gray-700 mb-2">🫙 Filtrar por categoría</h2>
+  <div class="flex flex-col space-y-2">
+    <div v-for="category in noteStore.categories" :key="category" class="flex justify-between items-center">
+      <button @click="filterByCategory(category)" 
+              class="px-4 py-2 text-left rounded-lg hover:bg-blue-100 capitalize flex-grow"
+              :class="{'bg-blue-500 text-white': selectedCategory === category}">
+        {{ category }}
+      </button>
+      <button @click="removeCategory(category)" class="text-red-500 hover:text-red-700 px-2">
+        🗑️
+      </button>
+    </div>
+    <button @click="filterByCategory(null)" class="px-4 py-2 text-left rounded-lg hover:bg-blue-100">
+      Todas
+    </button>
+  </div>
+</div>
+
     </aside>
     
-    <!-- Área de notas -->
+    
     <main class="md:col-span-2 space-y-6">
       <div v-if="noteStore.loading" class="text-center py-8">
         <div class="animate-spin inline-block w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
@@ -33,14 +39,19 @@
       <div v-else>
         <div v-if="totalNotes > 0" class="flex justify-end mb-4">
           <BaseButton @click="clearAll" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
-            Borrar todas 🗑️
+            Eliminar todas 🗑️
           </BaseButton>
         </div>
         
         <div v-for="category in filteredCategories" :key="category" class="bg-white p-4 rounded-lg shadow">
-          <h2 class="text-xl font-semibold text-blue-700 border-b pb-1 mb-3 capitalize">
-            {{ category }} ({{ getTotalByCategory(category) }})
-          </h2>
+          <div class="flex justify-between items-center border-b pb-1 mb-3">
+            <h2 class="text-xl font-semibold text-blue-700 capitalize">
+              {{ category }} ({{ getTotalByCategory(category) }})
+            </h2>
+            <BaseButton @click="deleteCategoryNotes(category)" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg text-sm">
+              🗑️ Eliminar notas
+            </BaseButton>
+          </div>
           <div v-if="noteStore.filterNotes(category).length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <NoteItem v-for="note in noteStore.filterNotes(category)" :key="note.id" :note="note" @edit="editNote" @delete="deleteNote" />
           </div>
@@ -49,7 +60,7 @@
       </div>
     </main>
     
-    <!-- Modal de formulario -->
+    
     <div v-if="isModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
       <div class="bg-white p-6 rounded-lg shadow-2xl max-w-md w-full">
         <h2 class="text-xl font-bold text-blue-800 text-center">
@@ -114,6 +125,15 @@ function closeModal() {
   isModalOpen.value = false;
   noteToEdit.value = null;
 }
+
+function deleteCategoryNotes(category: string) {
+  noteStore.deleteByCategory(category);
+}
+
+function removeCategory(category: string) {
+  noteStore.deleteCategory(category);
+}
+
 
 function filterByCategory(category: string | null) {
   selectedCategory.value = category;
