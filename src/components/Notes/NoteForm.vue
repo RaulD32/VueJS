@@ -1,90 +1,76 @@
 <template>
-  <form @submit.prevent="handleSubmit" class="space-y-4">
-      <div class="space-y-1">
-          <label for="title" class="block text-sm font-medium text-blue-900">
-              Título <span class="text-red-500">*</span>
-          </label>
-          <input
-          id="title"
-          v-model="form.title"
-          type="text"
-          required
-          placeholder="Ingresa el título de la nota"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-400 placeholder-gray-400 transition-all"
-          />
+  <form @submit.prevent="submitForm" class="space-y-4">
+    <div>
+      <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
+      <input v-model="noteData.title" type="text" id="title" required
+        class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+    </div>
+    
+    <div>
+      <label for="category" class="block text-sm font-medium text-gray-700">Categoría</label>
+      <select v-model="noteData.cat" id="category" required
+        class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+        <option disabled value="">Selecciona una categoría</option>
+        <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+      </select>
+    </div>
+    
+    <div>
+      <label for="new-category" class="block text-sm font-medium text-gray-700">Nueva Categoría</label>
+      <div class="flex gap-2">
+        <input v-model="newCategory" type="text" id="new-category"
+          class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+        <BaseButton type="button" @click="addCategory" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+          Agregar
+        </BaseButton>
       </div>
-  
-      <div class="space-y-1">
-        <label for="description" class="block text-sm font-medium text-blue-900">
-          Descripción
-        </label>
-        <textarea
-          id="description"
-          v-model="form.description"
-          rows="3"
-          placeholder="Añade una descripción"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-black focus:border-blue-500 focus:ring-2 focus:ring-blue-400 placeholder-gray-400 transition-all"
-        ></textarea>
-      </div>
-  
-      <div class="space-y-1">
-          <label for="cat" class="block text-sm font-medium text-blue-900">Categoría</label>
-          <select
-          id="cat"
-          v-model="form.cat"
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-black focus:border-blue-500 focus:ring-2 focus:ring-blue-400 transition-all"
-          >
-          <option value="trabajo">Trabajo</option>
-          <option value="personal">Personal</option>
-          <option value="urgente">Urgente</option>
-          </select>
-      </div>
-  
-      <div class="flex justify-center gap-3">
-          <BaseButton type="button" variant="secondary"  @click="$emit('close')" class="bg-gray-700 text-gray-300 hover:bg-gray-600">
-          Cancelar
-          </BaseButton>
-          <BaseButton type="submit" variant="primary" class="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!isModalCompleted">
-                  {{ notetoEdit ? 'Actualizar' : 'Guardar' }}
-          </BaseButton>
-      </div>
+    </div>
+    
+    <div>
+      <label for="content" class="block text-sm font-medium text-gray-700">Contenido</label>
+      <textarea v-model="noteData.content" id="content" required rows="4"
+        class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+    </div>
+    
+    <div class="flex justify-end gap-2">
+      <BaseButton type="button" @click="$emit('close')" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">
+        Cancelar
+      </BaseButton>
+      <BaseButton type="submit" :disabled="!noteData.title || !noteData.cat"
+        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+        Guardar
+      </BaseButton>
+    </div>
   </form>
 </template>
 
-<script lang="ts" setup>
-import type { Note } from '@/interfaces/INotes';
-import BaseButton from '../common/BaseButton.vue';
-import { computed, reactive } from 'vue';
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import { useNoteStore } from '@/stores/note';
+import type { Note } from '@/interfaces/INote';
+import BaseButton from '@/components/common/BaseButton.vue';
 
-const isModalCompleted = computed(() =>{
-return form.title.trim() !== '' && form.cat.trim() !== '';
+const noteStore = useNoteStore();
+const props = defineProps<{ noteToEdit?: Note | null }>();
+const emit = defineEmits(['submit', 'close']);
+
+const noteData = ref({
+  title: props.noteToEdit?.title || '',
+  cat: props.noteToEdit?.cat || '',
+  content: props.noteToEdit?.content || ''
 });
+const newCategory = ref('');
+const categories = computed(() => noteStore.categories);
 
-const props = defineProps<{
-noteToEdit?: Note | null
-}>();
-
-const emit = defineEmits<{
-  (e: 'submit', note: Omit<Note, 'id' | 'createdAt'>): void;
-}>();
-
-const initialForm ={
-title: props.noteToEdit?.title || '',
-description: props.noteToEdit?.description || '',
-cat: props.noteToEdit?.cat || 'personal'
+function addCategory() {
+  if (newCategory.value.trim() && !categories.value.includes(newCategory.value.trim())) {
+    noteStore.addCategory(newCategory.value.trim());
+    noteData.value.cat = newCategory.value.trim();
+    newCategory.value = '';
+  }
 }
 
-const form = reactive({ ...initialForm })
-
-const handleSubmit = () => {
-emit('submit', {
-  ...form,
-})
-resetForm()
-}
-
-const resetForm = () => {
-Object.assign(form, initialForm)
+function submitForm() {
+  emit('submit', { ...noteData.value });
 }
 </script>

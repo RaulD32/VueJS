@@ -7,10 +7,11 @@
       <BaseButton @click="openModal" class="bg-blue-500 hover:bg-blue-600 text-white w-full py-2 rounded-lg">
         + Nueva nota
       </BaseButton>
+      
       <div class="mt-6 w-full">
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">🫙Filtrar por categoría</h2>
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">🫙 Filtrar por categoría</h2>
         <div class="flex flex-col space-y-2">
-          <button v-for="category in categories" :key="category" @click="filterByCategory(category)" 
+          <button v-for="category in noteStore.categories" :key="category" @click="filterByCategory(category)" 
                   class="px-4 py-2 text-left rounded-lg hover:bg-blue-100 capitalize"
                   :class="{'bg-blue-500 text-white': selectedCategory === category}">
             {{ category }}
@@ -63,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useNoteStore } from '@/stores/note';
 import type { Note } from '@/interfaces/INote';
 import NoteItem from '@/components/Notes/NoteItem.vue';
@@ -71,17 +72,12 @@ import NoteForm from '@/components/Notes/NoteForm.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 
 const noteStore = useNoteStore();
-const categories: Array<Note['cat']> = ['trabajo', 'personal', 'urgente'];
 const noteToEdit = ref<Note | null>(null);
 const isModalOpen = ref(false);
 const selectedCategory = ref<string | null>(null);
 
-onMounted(() => {
-  noteStore.fetchNotes();
-});
-
 const totalNotes = computed(() => noteStore.notes.length);
-const filteredCategories = computed(() => (selectedCategory.value ? [selectedCategory.value] : categories));
+const filteredCategories = computed(() => (selectedCategory.value ? [selectedCategory.value] : noteStore.categories));
 
 function getTotalByCategory(cat: Note['cat']) {
   return noteStore.filterNotes(cat).length;
